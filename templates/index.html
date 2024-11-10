@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Mass Calculator</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom animation styles */
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .slide-down {
+            animation: slideDown 1s ease-in-out;
+        }
+
+        /* Keyframes for animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Loading spinner styling */
+        .spinner-border {
+            width: 2rem;
+            height: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2 class="text-center">Molecular Mass Calculator</h2>
+    <p class="text-center text-muted">Enter a chemical formula (e.g., H2O, CO2)</p>
+
+    <div class="card shadow mt-4 slide-down">
+        <div class="card-body">
+            <div class="form-group">
+                <label for="formula">Chemical Formula</label>
+                <input type="text" id="formula" class="form-control" placeholder="Enter formula (e.g., H2O)">
+            </div>
+            <button id="calculateButton" class="btn btn-primary btn-block" onclick="calculateMass()">Calculate Molecular Mass</button>
+            <div id="loading" class="text-center mt-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p>Calculating...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="result" class="mt-4"></div>
+</div>
+
+<!-- jQuery, Bootstrap JS, and Custom Script for Animations -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+async function calculateMass() {
+    const formula = document.getElementById("formula").value.trim();
+    const resultDiv = document.getElementById("result");
+    const loadingDiv = document.getElementById("loading");
+    const calculateButton = document.getElementById("calculateButton");
+
+    // Reset and hide result, show loading spinner
+    resultDiv.innerHTML = "";
+    $(resultDiv).hide();
+    $(loadingDiv).fadeIn();
+    $(calculateButton).prop("disabled", true); // Disable button during calculation
+
+    if (!formula) {
+        resultDiv.innerHTML = "<div class='alert alert-warning fade-in'>Please enter a chemical formula.</div>";
+        $(loadingDiv).hide();
+        $(resultDiv).fadeIn();
+        $(calculateButton).prop("disabled", false);
+        return;
+    }
+
+    try {
+        const response = await fetch("/calculate_molecular_mass", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ formula })
+        });
+
+        const data = await response.json();
+        
+        // Hide loading spinner and show result with animation
+        $(loadingDiv).hide();
+        $(resultDiv).hide();
+
+        if (response.ok) {
+            resultDiv.innerHTML = `
+                <div class="card mt-3 fade-in">
+                    <div class="card-header bg-primary text-white">
+                        Molecular Mass Calculation
+                    </div>
+                    <div class="card-body">
+                        <h5>Total Molecular Mass: <strong>${data.total_mass.toFixed(3)} u</strong></h5>
+                        <hr>
+                        <h6>Breakdown:</h6>
+                        <ul class="list-group">
+                            ${data.breakdown.map(item => `
+                                <li class="list-group-item d-flex justify-content-between align-items-center fade-in">
+                                    ${item.element} (${item.atomic_mass} u) x ${item.count} = ${item.element_mass.toFixed(3)} u
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger fade-in">${data.error}</div>`;
+        }
+
+        // Display the result with a fade-in effect
+        $(resultDiv).fadeIn();
+    } catch (error) {
+        $(loadingDiv).hide();
+        resultDiv.innerHTML = `<div class="alert alert-danger fade-in">Error: ${error.message}</div>`;
+        $(resultDiv).fadeIn();
+    } finally {
+        // Re-enable button after calculation
+        $(calculateButton).prop("disabled", false);
+    }
+}
+</script>
+
+</body>
+</html>
