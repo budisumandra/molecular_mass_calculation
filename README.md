@@ -1,1 +1,2 @@
 # molecular_mass_calculation
+This project is designed to calculate the molecular mass of compounds (such as H₂SO₄, O₂, NaOH, NaCl, etc.). The atomic mass for each element is obtained through an API at http://127.0.0.1:5000/search?query={element}. The complete code is available at https://github.com/budisumandra/chemical-element.
